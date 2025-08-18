@@ -88,7 +88,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173",frontendURL,"https://api.ryotube.in","https://ryotube.netlify.app","https://ryotube.in","https://www.ryotube.in")); // Your frontend URL
+        configuration.setAllowedOrigins(List.of("http://localhost:5173",frontendURL,"https://api.ryotube.in","https://ryotube.netlify.app","https://ryotube.in","https://www.ryotube.in","https://ryotube-app.netlify.app")); // Your frontend URL
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers
         configuration.setAllowCredentials(true); // If you're using cookies/auth
