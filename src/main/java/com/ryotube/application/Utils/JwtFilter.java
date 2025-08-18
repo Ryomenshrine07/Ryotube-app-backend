@@ -27,6 +27,7 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         final String path = request.getServletPath();
+//        System.out.println(path);
         if(path.equals("/login") || path.equals("/register")){
             filterChain.doFilter(request, response);
             return;

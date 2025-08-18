@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,13 +53,13 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    @PostMapping("/get-user")
-    ResponseEntity<User> getUserFromToken(@RequestBody TokenData token){
-        try {
-            String email = jwtUtil.extractEmail(token.getToken());
-            return ResponseEntity.ok(userService.getUserDetails(email));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    @GetMapping("/get-user")
+    public ResponseEntity<UserDetails> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        // 1. Your Axios interceptor adds the 'Authorization' header.
+        // 2. Your JwtFilter automatically reads the header and validates the token.
+        // 3. The filter loads the user and places it in the security context.
+        // 4. @AuthenticationPrincipal injects that user directly into this method.
+
+        return ResponseEntity.ok(userDetails);
     }
 }
