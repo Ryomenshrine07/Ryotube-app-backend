@@ -34,6 +34,7 @@ public class UserService {
             u.setUsername(authData.getUsername());
             u.setEmail(authData.getEmail());
             u.setPassword(passwordEncoder.encode(authData.getPassword()));
+            channelService.createChannel(u);
             return userRepository.save(u);
         }else{
             throw new Exception("Email already exists");
