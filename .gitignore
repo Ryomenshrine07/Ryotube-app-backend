@@ -1,0 +1,26 @@
+# Compiled output
+target/
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+build-log.txt
+*.jar
+*.iws
+*.iml
+*.ipr
+
+# IDE files
+.idea/
+.vscode/
+.classpath
+.project
+.settings
+.factorypath
+
+# Secret files
+.env
+src/main/resources/application.properties

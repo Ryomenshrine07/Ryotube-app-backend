@@ -1,0 +1,9 @@
+# railway.toml
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "java -Dserver.port=$PORT -jar target/*.jar"
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 120
