@@ -3,6 +3,7 @@ package com.ryotube.application.Controllers;
 import com.ryotube.application.Entities.User;
 import com.ryotube.application.Helpers.AuthenticationData;
 import com.ryotube.application.Helpers.TokenData;
+import com.ryotube.application.Repositories.UserRepository;
 import com.ryotube.application.Services.MyUserDetailService;
 import com.ryotube.application.Services.UserService;
 import com.ryotube.application.Utils.JwtUtil;
@@ -31,6 +32,8 @@ public class AuthController {
     JwtUtil jwtUtil;
     @Autowired
     UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthToken(@RequestBody AuthenticationData authRequest) {
@@ -61,5 +64,10 @@ public class AuthController {
         // 4. @AuthenticationPrincipal injects that user directly into this method.
 
         return ResponseEntity.ok(userDetails);
+    }
+    @PostMapping("/get-user-by-email")
+    public ResponseEntity<User> getUserByEmail(@RequestBody AuthenticationData authenticationData){
+        User u = userRepository.getUserByEmail(authenticationData.getEmail());
+        return ResponseEntity.ok(u);
     }
 }
