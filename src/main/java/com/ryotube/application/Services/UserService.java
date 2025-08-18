@@ -9,6 +9,7 @@ import com.ryotube.application.Utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -27,15 +28,18 @@ public class UserService {
 
 
 
+    @Transactional
     public User registerUser(AuthenticationData authData) throws Exception{
         User user = userRepository.getUserByEmail(authData.getEmail());
+        System.out.println("Got Here");
         if(user == null){
             User u = new User();
             u.setUsername(authData.getUsername());
             u.setEmail(authData.getEmail());
             u.setPassword(passwordEncoder.encode(authData.getPassword()));
-            channelService.createChannel(u);
-            return userRepository.save(u);
+            User savedUser = userRepository.save(u);
+            channelService.createChannel(savedUser);
+            return savedUser;
         }else{
             throw new Exception("Email already exists");
         }

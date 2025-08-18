@@ -53,6 +53,7 @@ public class AuthController {
         try {
             return ResponseEntity.ok(userService.registerUser(authRequest));
         } catch (Exception e) {
+            System.out.println("Got exception");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

@@ -29,12 +29,11 @@ public class ChannelService {
     ChannelStatusRepository channelStatusRepository;
 
     @Transactional
-    public Channel createChannel(User user){
-        User u = userRepository.getUserByEmail(user.getEmail());
-        Channel c = channelRepository.getChannelByUserEmail(user.getEmail());
+    public Channel createChannel(User u){
+        Channel c = channelRepository.getChannelByUserEmail(u.getEmail());
         if(c != null) return c;
         Channel channel = new Channel();
-        channel.setChannelName(user.getUsername()+" 's Channel");
+        channel.setChannelName(u.getUsername()+" 's Channel");
         channel.setChannelDescription("This is your channel description");
         channel.setGitHubLink("None");
         channel.setTwitterLink("None");
@@ -51,6 +50,7 @@ public class ChannelService {
         }
         channel.setUser(u);
         u.setChannel(channel);
+        System.out.println("R");
         return channelRepository.save(channel);
     }
 }
