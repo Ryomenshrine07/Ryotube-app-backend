@@ -54,6 +54,7 @@ public class AuthController {
             return ResponseEntity.ok(userService.registerUser(authRequest));
         } catch (Exception e) {
             if(e.getMessage().equals("Email already exists")){
+                System.out.println("HERE");
                 return ResponseEntity.ok("Email already exists");
             }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
