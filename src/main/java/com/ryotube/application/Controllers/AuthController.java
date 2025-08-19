@@ -42,7 +42,7 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
             );
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect Username Or Password");
+            return ResponseEntity.ok("Incorrect Username Or Password");
         }
         final UserDetails userDetails = myUserDetailService.loadUserByUsername(authRequest.getEmail());
         final String token = jwtUtil.generateToken(userDetails);
