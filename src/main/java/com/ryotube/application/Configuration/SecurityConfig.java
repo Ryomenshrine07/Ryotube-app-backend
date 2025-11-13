@@ -43,8 +43,6 @@ public class SecurityConfig {
 
     @Autowired
     JwtFilter jwtFilter;
-    @Value("${aws.accessKeyId}")
-    private String accessKey;
 
     @Value("${netlify.frontend.url}")
     private String frontendURL;
