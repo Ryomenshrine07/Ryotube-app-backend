@@ -1,6 +1,8 @@
 package com.ryotube.application.Configuration;
 
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.ryotube.application.Services.MyUserDetailService;
 import com.ryotube.application.Utils.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,15 @@ public class SecurityConfig {
 
     @Value("${netlify.frontend.url}")
     private String frontendURL;
+
+    @Value("${cloudinary.cloud_name}")
+    private String cloudName;
+
+    @Value("${cloudinary.api_key}")
+    private String apiKey;
+
+    @Value("${cloudinary.api_secret}")
+    private String apiSecret;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
@@ -108,12 +119,17 @@ public class SecurityConfig {
     BCryptPasswordEncoder passwordEncoder(){
         return  new BCryptPasswordEncoder();
     }
+
+
+
     @Bean
-    public S3Client s3Client() {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        return S3Client.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
+    public Cloudinary cloudinary() {
+        return new Cloudinary(ObjectUtils.asMap(
+                "cloud_name", cloudName,
+                "api_key", apiKey,
+                "api_secret", apiSecret,
+                "secure", true
+        ));
     }
+
 }

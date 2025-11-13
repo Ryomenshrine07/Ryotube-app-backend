@@ -29,7 +29,7 @@ public class Video {
     private String tile;
     private String duration;
     private LocalDateTime uploadDateTime;
-
+    private String cloudId;
 
     @Lob
     @Column(columnDefinition = "TEXT")

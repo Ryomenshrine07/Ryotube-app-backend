@@ -5,8 +5,7 @@ import com.ryotube.application.Entities.Video;
 import com.ryotube.application.Helpers.SubscriptionElement;
 import com.ryotube.application.Repositories.ChannelRepository;
 import com.ryotube.application.Repositories.VideoRepository;
-import com.ryotube.application.Services.ChannelService;
-import com.ryotube.application.Services.S3Service;
+import com.ryotube.application.Services.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -29,7 +29,7 @@ public class ChannelController {
     private String thumbnailBucketName;
 
     @Autowired
-    private S3Service s3Service;
+    private CloudinaryService cloudinaryService;
     @Autowired
     private ChannelRepository channelRepository;
 
@@ -39,7 +39,8 @@ public class ChannelController {
             @RequestParam("profile-pic")MultipartFile file
     ){
         try{
-            String profileURL = s3Service.uploadFile(file,thumbnailBucketName);
+            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file,"Profile Pictures");
+            String profileURL = uploadResult.get("secure_url").toString();
             Channel c = channelRepository.getChannelById(channelId);
             c.setChannelPicURL(profileURL);
             channelRepository.save(c);
@@ -58,7 +59,8 @@ public class ChannelController {
             @RequestParam("bannerDesc") String bannerDesc
     ){
         try{
-            String bannerPicURL = s3Service.uploadFile(file,thumbnailBucketName);
+            Map<String, Object> uploadResult = cloudinaryService.uploadFile(file,"Banners");
+            String bannerPicURL = uploadResult.get("secure_url").toString();
             Channel c = channelRepository.getChannelById(channelId);
             if(!bannerPicURL.isEmpty()){
                 c.getBanner().setBannerPicUrl(bannerPicURL);
@@ -95,6 +97,23 @@ public class ChannelController {
             c.setGitHubLink(gitHubLink);
         }
         channelRepository.save(c);
+    }
+    @PostMapping("update-channel-info")
+    public ResponseEntity<?> updateChannelInfo(
+            @RequestParam("channelId") Long channelId,
+            @RequestParam("channelName") String channelName,
+            @RequestParam("channelDescription") String channelDescription
+    ){
+        try{
+            Channel c = channelRepository.getChannelById(channelId);
+            c.setChannelName(channelName);
+            c.setChannelDescription(channelDescription);
+            channelRepository.save(c);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
     @PostMapping("/subscribe")
     public ResponseEntity<?> subscribeToChannel(

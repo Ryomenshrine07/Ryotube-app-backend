@@ -48,23 +48,11 @@ public class VideoService {
         videoRepository.save(video);
         channelRepository.save(channel);
     }
-    public String getVideoDuration(MultipartFile file) throws IOException {
-        // Save MultipartFile to a temp file
-        File convFile = File.createTempFile("upload", ".mp4");
-        try (FileOutputStream fos = new FileOutputStream(convFile)) {
-            fos.write(file.getBytes());
-        }
-
-        // Read MP4 duration
-        IsoFile isoFile = new IsoFile(convFile.getAbsolutePath());
-        double lengthInSeconds =
-                (double) isoFile.getMovieBox().getMovieHeaderBox().getDuration() /
-                        isoFile.getMovieBox().getMovieHeaderBox().getTimescale();
-
-        isoFile.close();
-        // Format mm:ss
-        int minutes = (int) (lengthInSeconds / 60);
-        int seconds = (int) (lengthInSeconds % 60);
-        return String.format("%02d:%02d", minutes, seconds);
+    public String formatDuration(Double seconds) {
+        if (seconds == null) return "00:00";
+        int totalSeconds = seconds.intValue();
+        int minutes = totalSeconds / 60;
+        int remainingSeconds = totalSeconds % 60;
+        return String.format("%02d:%02d", minutes, remainingSeconds);
     }
 }

@@ -3,17 +3,13 @@ package com.ryotube.application.Controllers;
 import com.ryotube.application.Entities.Channel;
 import com.ryotube.application.Entities.Video;
 import com.ryotube.application.Helpers.ChannelData;
-import com.ryotube.application.Helpers.VideoChannelData;
 import com.ryotube.application.Repositories.ChannelRepository;
 import com.ryotube.application.Repositories.VideoRepository;
-import com.ryotube.application.Services.S3Service;
+import com.ryotube.application.Services.CloudinaryService;
 import com.ryotube.application.Services.VideoService;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +24,7 @@ import java.util.Set;
 public class VideoController {
 
     @Autowired
-    private S3Service s3Service;
+    private CloudinaryService cloudinaryService;
 
     @Value("${aws.s3.bucketName}")
     private String videoBucketName;
@@ -47,18 +43,18 @@ public class VideoController {
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(
-            @RequestParam("video") MultipartFile videoFile,
-            @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnailFile,
+            @RequestParam("videoId") String cloudId,
+            @RequestParam("videoUrl") String videoUrl,
+            @RequestParam("thumbnail") String thumbnailUrl,
             @RequestParam("title") String title,
+            @RequestParam("duration") Double duration,
             @RequestParam("category") String category,
             @RequestParam("description") String description,
             @RequestParam("tags") String tags,
             @RequestParam("channelId") String channelId
     ) {
         try {
-
-            String videoUrl = s3Service.uploadFile(videoFile, videoBucketName);
-            String thumbnailUrl = s3Service.uploadFile(thumbnailFile, thumbnailBucketName);
+            String formattedDuration = videoService.formatDuration(duration);
             Video v = new Video();
             v.setTile(title);
             v.setVideoCategory(category);
@@ -67,14 +63,15 @@ public class VideoController {
             v.setVideoThumbnail(thumbnailUrl);
             v.setLikes(0L);
             v.setViews(0L);
+            v.setCloudId(cloudId);
             v.setDislikes(0L);
-            v.setDuration(videoService.getVideoDuration(videoFile));
+            v.setDuration(formattedDuration);
             videoService.uploadVideo(v,Long.parseLong(channelId));
 
             return ResponseEntity.ok(Map.of("message", "Video uploaded successfully!", "url", videoUrl));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "Error uploading video."));
+            return ResponseEntity.status(500).body(Map.of("error", "Error uploading file."));
         }
     }
     @PostMapping("/get-all-Channel-videos")
@@ -285,11 +282,9 @@ public class VideoController {
     @GetMapping("/download-url/{videoId}")
     public ResponseEntity<String> getDownloadUrl(@PathVariable Long videoId) {
         Video v = videoRepository.getVideoById(videoId);
-        String videoURL = v.getVideoUrl();
-        String fileKey = videoURL.substring(videoURL.lastIndexOf('/') + 1);
-        String presignedUrl = s3Service.generatePresignedUrl(fileKey,videoBucketName);
-        return ResponseEntity.ok(presignedUrl);
+        return ResponseEntity.ok(v.getVideoUrl());
     }
+
     @GetMapping("/get-watch-later-videos/{id}")
     public ResponseEntity<List<Video>> getWatchLaterVideos(@PathVariable("id") Long channelId){
         try{
@@ -307,11 +302,11 @@ public class VideoController {
     }
     @PostMapping("/put-video-to-watch-later")
     public void putVideoInWatchLater(
-            @RequestParam("videoId") Long videoId,
-            @RequestParam("channelId") Long channelId
+            @RequestParam("videoId") String videoId,
+            @RequestParam("channelId") String channelId
     ){
-        Channel c = channelRepository.getChannelById(channelId);
-        c.getWatchLaterVideos().add(videoId);
+        Channel c = channelRepository.getChannelById(Long.parseLong(channelId));
+        c.getWatchLaterVideos().add(Long.parseLong(videoId));
         channelRepository.save(c);
     }
     @PostMapping("/remove-video-from-watch-later")
@@ -323,6 +318,20 @@ public class VideoController {
         if(c.getWatchLaterVideos().contains(videoId)){
             c.getWatchLaterVideos().remove(videoId);
             channelRepository.save(c);
+        }
+    }
+    @PostMapping("/check-video-watch-later")
+    public ResponseEntity<Boolean> checkPresentOrNot(
+            @RequestParam("videoId") String videoId,
+            @RequestParam("channelId") String channelId
+    ){
+        try{
+            Channel c = channelRepository.getChannelById(Long.parseLong(channelId));
+            Set<Long> watchLater = c.getWatchLaterVideos();
+            return ResponseEntity.ok(watchLater.contains(Long.parseLong(videoId)));
+        } catch (Exception e) {
+            e.printStackTrace();;
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 }
