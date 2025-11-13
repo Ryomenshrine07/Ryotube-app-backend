@@ -46,12 +46,6 @@ public class SecurityConfig {
     @Value("${aws.accessKeyId}")
     private String accessKey;
 
-    @Value("${aws.secretKey}")
-    private String secretKey;
-
-    @Value("${aws.region}")
-    private String region;
-
     @Value("${netlify.frontend.url}")
     private String frontendURL;
 
@@ -87,14 +81,6 @@ public class SecurityConfig {
             authProvider.setUserDetailsService(myUserDetailService);
             authProvider.setPasswordEncoder(passwordEncoder());
             return authProvider;
-    }
-    @Bean
-    public S3Presigner s3Presigner() {
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        return S3Presigner.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
     }
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
