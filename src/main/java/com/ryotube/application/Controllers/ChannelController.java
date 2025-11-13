@@ -25,9 +25,6 @@ public class ChannelController {
     @Autowired
     VideoRepository videoRepository;
 
-    @Value("${aws.s3.bucket.thumbnails}")
-    private String thumbnailBucketName;
-
     @Autowired
     private CloudinaryService cloudinaryService;
     @Autowired

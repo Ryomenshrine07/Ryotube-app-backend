@@ -26,11 +26,6 @@ public class VideoController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-    @Value("${aws.s3.bucketName}")
-    private String videoBucketName;
-
-    @Value("${aws.s3.bucket.thumbnails}")
-    private String thumbnailBucketName;
 
     @Autowired
     VideoService videoService;
