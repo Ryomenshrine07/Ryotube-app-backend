@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -91,6 +92,40 @@ public class Channel {
     @OneToMany(mappedBy = "channel",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Video> videos;
 
+    @JsonManagedReference(value = "channel-shorts")
+    @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Short> shorts = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_liked_shorts", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "short_id")
+    private Set<Long> likedShorts = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_disliked_shorts", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "short_id")
+    private Set<Long> dislikedShorts = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_liked_short_comments", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "comment_id")
+    private Set<Long> likedShortComments = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_disliked_short_comments", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "comment_id")
+    private Set<Long> dislikedShortComments = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_liked_short_comment_replies", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "reply_id")
+    private Set<Long> likedShortCommentReplies = new HashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "channel_disliked_short_comment_replies", joinColumns = @JoinColumn(name = "channel_id"))
+    @Column(name = "reply_id")
+    private Set<Long> dislikedShortCommentReplies = new HashSet<>();
+
     @JsonManagedReference
     @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
     @JoinColumn(name = "status_id",referencedColumnName = "id")
@@ -98,7 +133,7 @@ public class Channel {
 
     @JsonManagedReference
     @OneToMany(mappedBy = "channel",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<PlayList> playLists;
+    private List<PlayList> playLists = new ArrayList<>();
 
     @JsonBackReference
     @OneToOne(mappedBy = "channel")

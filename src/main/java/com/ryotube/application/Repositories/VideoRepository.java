@@ -23,4 +23,7 @@ public interface VideoRepository extends JpaRepository<Video,Long> {
     @Query("SELECT v from Video v where v.channel.id = :id")
     List<Video> getAllVideosOfId(Long id);
 
+    @Query("SELECT v FROM Video v WHERE LOWER(v.tile) LIKE LOWER(CONCAT(:prefix, '%'))")
+    List<Video> searchByTitlePrefix(@Param("prefix") String prefix);
+
 }

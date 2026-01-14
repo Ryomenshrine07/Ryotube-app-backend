@@ -1,8 +1,6 @@
 package com.ryotube.application.Entities;
 
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -15,21 +13,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "videos", indexes = {
-    @Index(name = "idx_video_feed", columnList = "feedScore DESC, uploadDateTime DESC, id DESC")
+@Table(name = "shorts", indexes = {
+    @Index(name = "idx_short_feed", columnList = "feedScore DESC, uploadDateTime DESC, id DESC")
 })
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Video {
+public class Short {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    
     private long likes;
     private long dislikes;
     private long views;
-    private String tile;
+    private String title;
     private String duration;
     private LocalDateTime uploadDateTime;
     private String cloudId;
@@ -41,39 +40,37 @@ public class Video {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String videoChannelName;
-    private String videoCategory;
-    private String videoThumbnail;
-    private String videoUrl;
-
-    @OneToMany(mappedBy = "video",cascade = CascadeType.ALL,orphanRemoval = true)
-    @JsonManagedReference
-    private List<Comment> comments;
+    private String shortChannelName;
+    private String shortCategory;
+    private String shortThumbnail;
+    private String shortUrl;
 
     @ManyToOne
-    @JsonBackReference
+    @JsonBackReference(value = "channel-shorts")
     @JoinColumn(name = "channel_id")
-    Channel channel;
+    private Channel channel;
 
-    @ManyToMany(mappedBy = "videos")
-    @JsonIgnore
-    private List<PlayList> playlists = new ArrayList<>();
+    @OneToMany(mappedBy = "shortVideo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference(value = "short-comments")
+    private List<ShortComment> comments = new ArrayList<>();
 
     @Transient
-    public Long getChannelId(){
+    public Long getChannelId() {
         return channel != null ? channel.getId() : null;
     }
+
     @Transient
-    public String getChannelName(){
+    public String getChannelName() {
         return channel != null ? channel.getChannelName() : null;
     }
+
     @Transient
-    public Long getChannelSubscriberCount(){
-        return channel != null ? channel.getSubscribersCount() : null;
+    public String getChannelPicUrl() {
+        return channel != null ? channel.getChannelPicURL() : null;
     }
+
     @PrePersist
     public void onCreate() {
         this.uploadDateTime = LocalDateTime.now();
     }
-
 }

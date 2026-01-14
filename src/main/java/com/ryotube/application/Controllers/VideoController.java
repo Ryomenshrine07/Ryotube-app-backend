@@ -6,9 +6,9 @@ import com.ryotube.application.Helpers.ChannelData;
 import com.ryotube.application.Repositories.ChannelRepository;
 import com.ryotube.application.Repositories.VideoRepository;
 import com.ryotube.application.Services.CloudinaryService;
+import com.ryotube.application.Services.FeedService;
 import com.ryotube.application.Services.VideoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +26,6 @@ public class VideoController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
-
     @Autowired
     VideoService videoService;
 
@@ -35,6 +34,112 @@ public class VideoController {
 
     @Autowired
     ChannelRepository channelRepository;
+
+    @Autowired
+    FeedService feedService;
+
+    // Frontend direct upload - accepts Cloudinary URLs
+    @PostMapping("/save-video")
+    public ResponseEntity<Map<String, Object>> saveVideoFromCloudinary(
+            @RequestParam("videoUrl") String videoUrl,
+            @RequestParam("cloudId") String cloudId,
+            @RequestParam("thumbnailUrl") String thumbnailUrl,
+            @RequestParam("title") String title,
+            @RequestParam("duration") String duration,
+            @RequestParam("category") String category,
+            @RequestParam("description") String description,
+            @RequestParam(value = "tags", required = false) String tags,
+            @RequestParam("channelId") Long channelId
+    ) {
+        try {
+            Video v = new Video();
+            v.setTile(title);
+            v.setVideoCategory(category);
+            v.setDescription(description);
+            v.setVideoUrl(videoUrl);
+            v.setVideoThumbnail(thumbnailUrl);
+            v.setLikes(0L);
+            v.setViews(0L);
+            v.setCloudId(cloudId);
+            v.setDislikes(0L);
+            v.setDuration(duration);
+            v.setFeedScore(0.0);
+            
+            videoService.uploadVideo(v, channelId);
+            
+            // Calculate initial feed score
+            feedService.updateVideoFeedScore(v.getId());
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Video saved successfully!",
+                    "videoId", v.getId()
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error saving video: " + e.getMessage()));
+        }
+    }
+
+    // NEW: Streaming upload endpoint - handles file upload through backend
+    @PostMapping("/upload-video-stream")
+    public ResponseEntity<Map<String, Object>> uploadVideoStream(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("title") String title,
+            @RequestParam("category") String category,
+            @RequestParam("description") String description,
+            @RequestParam("tags") String tags,
+            @RequestParam("channelId") Long channelId,
+            @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail
+    ) {
+        try {
+            // Stream video to Cloudinary (memory efficient)
+            Map<String, Object> videoResult = cloudinaryService.uploadVideoStream(
+                    file.getInputStream(),
+                    "Videos",
+                    file.getOriginalFilename()
+            );
+
+            String videoUrl = (String) videoResult.get("secure_url");
+            String cloudId = (String) videoResult.get("public_id");
+            Number durationNum = (Number) videoResult.get("duration");
+            double duration = durationNum != null ? durationNum.doubleValue() : 0;
+
+            // Upload thumbnail if provided
+            String thumbnailUrl = "";
+            if (thumbnail != null && !thumbnail.isEmpty()) {
+                Map<String, Object> thumbResult = cloudinaryService.uploadImageStream(
+                        thumbnail.getInputStream(),
+                        "Thumbnails"
+                );
+                thumbnailUrl = (String) thumbResult.get("secure_url");
+            }
+
+            // Save video metadata
+            String formattedDuration = videoService.formatDuration(duration);
+            Video v = new Video();
+            v.setTile(title);
+            v.setVideoCategory(category);
+            v.setDescription(description);
+            v.setVideoUrl(videoUrl);
+            v.setVideoThumbnail(thumbnailUrl);
+            v.setLikes(0L);
+            v.setViews(0L);
+            v.setCloudId(cloudId);
+            v.setDislikes(0L);
+            v.setDuration(formattedDuration);
+            videoService.uploadVideo(v, channelId);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Video uploaded successfully!",
+                    "url", videoUrl,
+                    "cloudId", cloudId,
+                    "duration", duration
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Error uploading video: " + e.getMessage()));
+        }
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(
@@ -118,6 +223,8 @@ public class VideoController {
             video.setViews(video.getViews() + 1);
             videoRepository.save(video);
             channelRepository.save(c);
+            // Update feed score after view increase
+            feedService.updateVideoFeedScore(videoId);
         }catch (Exception e){
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -139,6 +246,8 @@ public class VideoController {
             video.setLikes(video.getLikes() + 1);
             videoRepository.save(video);
             channelRepository.save(c);
+            // Update feed score after like
+            feedService.updateVideoFeedScore(vId);
         }catch (Exception e){
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -327,6 +436,72 @@ public class VideoController {
         } catch (Exception e) {
             e.printStackTrace();;
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @PutMapping("/update-video/{videoId}")
+    public ResponseEntity<Video> updateVideo(
+            @PathVariable Long videoId,
+            @RequestParam("title") String title,
+            @RequestParam("description") String description,
+            @RequestParam("category") String category,
+            @RequestParam("channelId") Long channelId,
+            @RequestParam(value = "thumbnail", required = false) MultipartFile thumbnail
+    ) {
+        try {
+            Video video = videoRepository.getVideoById(videoId);
+            if (video == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            // Verify ownership
+            if (!video.getChannelId().equals(channelId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            video.setTile(title);
+            video.setDescription(description);
+            video.setVideoCategory(category);
+            
+            // Update thumbnail if provided
+            if (thumbnail != null && !thumbnail.isEmpty()) {
+                Map<String, Object> thumbResult = cloudinaryService.uploadImageStream(
+                        thumbnail.getInputStream(),
+                        "Thumbnails"
+                );
+                String thumbnailUrl = (String) thumbResult.get("secure_url");
+                video.setVideoThumbnail(thumbnailUrl);
+            }
+            
+            videoRepository.save(video);
+            return ResponseEntity.ok(video);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/delete-video/{videoId}")
+    public ResponseEntity<Void> deleteVideo(
+            @PathVariable Long videoId,
+            @RequestParam("channelId") Long channelId
+    ) {
+        try {
+            Video video = videoRepository.getVideoById(videoId);
+            if (video == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+            
+            // Verify ownership
+            if (!video.getChannelId().equals(channelId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            videoRepository.delete(video);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

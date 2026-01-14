@@ -10,8 +10,8 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
-//@EnableJpaRepositories(basePackages = "com.ryotube.application.Repositories")
-//@EntityScan(basePackages = "com.ryotube.application.Entities")
+// @EnableJpaRepositories(basePackages = "com.ryotube.application.Repositories")
+// @EntityScan(basePackages = "com.ryotube.application.Entities")
 public class Application {
 
 	public static void main(String[] args) {
